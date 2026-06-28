@@ -1,51 +1,89 @@
-import streamlit as st
 import os
-from yt_dlp import YoutubeDL
-from moviepy.editor import VideoFileClip
+import sys
+import subprocess
 
-# Website nu Title
+# ==================================================================
+# 🪄 BACKGROUND AUTO-INSTALLER (Error vagar badha tools install thashe)
+# ==================================================================
+def install(package):
+    subprocess.check_call([sys.executable, "-m", "pip", "install", package])
+
+try:
+    from yt_dlp import YoutubeDL
+except ImportError:
+    install('yt-dlp')
+    from yt_dlp import YoutubeDL
+
+try:
+    from moviepy.editor import VideoFileClip
+except ImportError:
+    install('moviepy')
+    from moviepy.editor import VideoFileClip
+
+import streamlit as st
+
+# ==================================================================
+# 🌐 STREAMLIT WEBSITE UI
+# ==================================================================
+
+# Browser na tab nu naam ane layout setting
+st.set_page_config(page_title="AI YouTube to Reel", layout="centered")
+
 st.title("🎬 AI YouTube to Viral Insta Reel Converter")
-st.write("Khali YouTube video ni link muko ane full quality vertical Reel download karo!")
+st.write("YouTube video ni link muko ane full quality vertical Reel/Short download karo!")
 
-# Link input box
+# Link paste karva mate nu box
 video_url = st.text_input("YouTube Video Link Ahiya Paste Karo 👇", "")
 
+# Processing Button
 if st.button("Generate Viral Reel 🚀"):
     if video_url:
-        with st.spinner("Video download ane crop thai rahyo che... aama thodo samay lagshe..."):
+        # Screen par loading animation dekhase
+        with st.spinner("Video download ane crop thai rahyo che... aama 1-2 minyt no samay laagi shake che..."):
             try:
-                # 1. High Quality Download
+                # 1. High Quality MP4 Download Framework
                 ydl_opts = {
                     'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]',
                     'outtmpl': 'temp_web_video.mp4',
+                    'quiet': True
                 }
+                
                 with YoutubeDL(ydl_opts) as ydl:
                     ydl.download([video_url])
                 
-                # 2. 9:16 Aspect Ratio ma Auto Crop (Center mathi)
+                # 2. Video open karvo ane dimensions ($9:16$ ratio) match karva
                 clip = VideoFileClip("temp_web_video.mp4")
                 w, h = clip.size
+                
+                # Vertical frame calculation (Center Crop)
                 new_w = int(h * 9 / 16)
                 x1 = (w - new_w) // 2
                 x2 = x1 + new_w
                 
-                # Pehli 30 seconds no viral part cut thashe
+                # Pehli 30 seconds no viral part cut karvo
                 cropped_clip = clip.crop(x1=x1, y1=0, x2=x2, y2=h).subclip(0, 30)
                 
                 output_filename = "viral_insta_reel.mp4"
+                
+                # High quality rendering format
                 cropped_clip.write_videofile(
                     output_filename, 
                     codec="libx264", 
                     audio_codec="aac", 
                     bitrate="5000k", 
-                    fps=30
+                    fps=30,
+                    logger=None # background text hide karva mate
                 )
                 
+                # Files safely close karvi jethi crash na thay
                 clip.close()
                 cropped_clip.close()
-                os.remove("temp_web_video.mp4")
                 
-                # 3. Web UI upar Download Button aapvu
+                # Original moti file delete karvi
+                if os.path.exists("temp_web_video.mp4"):
+                    os.remove("temp_web_video.mp4")
+                
+                # 3. Web Par Green Message ane Download Button
                 st.success("🎉 Tamari Viral Reel Tayar Che!")
                 
                 with open(output_filename, "rb") as file:
@@ -56,10 +94,10 @@ if st.button("Generate Viral Reel 🚀"):
                         mime="video/mp4"
                     )
                 
-                # Clean up output file after offering download
+                # Final clean up
                 os.remove(output_filename)
 
             except Exception as e:
-                st.error(f"Kaik error aavi: {str(e)}")
+                st.error(f"Kaik error aavi, fari try karo: {str(e)}")
     else:
         st.warning("Pehla koi valid YouTube link nako!")
