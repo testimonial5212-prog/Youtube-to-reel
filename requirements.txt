@@ -1,4 +1,4 @@
 streamlit
-yt-dlp
+RapidAPI
 moviepy==1.0.3
 Decorator
